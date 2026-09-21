@@ -1,0 +1,13 @@
+sales_user_id,name,role,territory,status
+USR-001,Daniel Pratama,SENIOR_ACCOUNT_EXECUTIVE,West Java,ACTIVE
+USR-002,Maya Santoso,SENIOR_ACCOUNT_EXECUTIVE,Greater Jakarta,ACTIVE
+USR-003,Arif Rahman,SENIOR_ACCOUNT_EXECUTIVE,Central & East Java,ACTIVE
+USR-004,Nadia Putri,ACCOUNT_EXECUTIVE,Bali & Nusa Tenggara,ACTIVE
+USR-005,Rizky Mahendra,ACCOUNT_EXECUTIVE,Sumatra North,ACTIVE
+USR-006,Fajar Nugroho,ACCOUNT_EXECUTIVE,Sumatra South,ACTIVE
+USR-007,Sinta Wijaya,ACCOUNT_EXECUTIVE,Kalimantan,ACTIVE
+USR-008,Kevin Hartono,ACCOUNT_EXECUTIVE,Sulawesi,ACTIVE
+USR-009,Dewi Lestari,ACCOUNT_EXECUTIVE,Greater Jakarta,ACTIVE
+USR-010,Bima Aditya,SALES_MANAGER,West Indonesia,ACTIVE
+USR-011,Clara Gunawan,SALES_MANAGER,East Indonesia,ACTIVE
+USR-012,Hendra Saputra,REGIONAL_SALES_MANAGER,National,ACTIVE

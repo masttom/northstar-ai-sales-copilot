@@ -1,0 +1,52 @@
+{
+  "dataset": "Northstar Commercial Solutions \u2014 Synthetic Data Foundation",
+  "version": "1.0",
+  "status": "FROZEN",
+  "frozen_date": "2026-09-21",
+  "files": {
+    "products.csv": {
+      "rows": 80,
+      "sha256": "168cd05a55bd729fcb9a48829f8ddfb786568a0a37a78a82b425cdf8fe7e376b"
+    },
+    "sales_users.csv": {
+      "rows": 12,
+      "sha256": "a94de81c8c078a998c80f962f5c8eebd221e3a8093e79cc480db07aaf8e66038"
+    },
+    "accounts.csv": {
+      "rows": 60,
+      "sha256": "bf9464eeaab73bb88c9f07194a1da67e4c641c7af39293ab49ea2d00e5e9e8d3"
+    },
+    "opportunities.csv": {
+      "rows": 30,
+      "sha256": "54cd49e2ba1e3370316f2d0e639cdbbae7bbcbd801a94b13210b2dd2ced7bac7"
+    },
+    "opportunity_solution_lines.csv": {
+      "rows": 55,
+      "sha256": "09ec1c0434ed78a3ac536e96d1a6a9197e03f87a5585df32943ed0b138b03b23"
+    },
+    "orders.csv": {
+      "rows": 74,
+      "sha256": "10a0f97926593ccdb9778b4c43348121018927fac35a01236f7b8d86b7849005"
+    },
+    "order_lines.csv": {
+      "rows": 216,
+      "sha256": "6307d1362ca38ae65548e82609928529111a1860f55116cf2e2348f46c594dcb"
+    },
+    "agreements.csv": {
+      "rows": 18,
+      "sha256": "2156cbe5b0d7de69403aad8b20ae4283da252a68b1c481369c9b5a20365df8e3"
+    },
+    "commercial_entitlements.csv": {
+      "rows": 18,
+      "sha256": "deb1eda69ccf20f8508bc304f7d983d5d77fb5196db227d23221010a82c747c1"
+    },
+    "inventory_positions.csv": {
+      "rows": 180,
+      "sha256": "a492365520f06fbbd0a5b0159dd387da21e452859615e5c100d4176b48200630"
+    },
+    "incoming_inventory.csv": {
+      "rows": 30,
+      "sha256": "31b2c5fce8545097b3de7dc5076b0ce6e9a7999328acd448c14ca48ded55239b"
+    }
+  }
+}

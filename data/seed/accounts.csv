@@ -1,0 +1,61 @@
+account_id,account_name,segment,account_tier,account_status,customer_since,sales_territory,account_owner_id
+ACC-0001,Archipelago Dining Collective,Hotels & Resorts,STRATEGIC,ACTIVE,2020-01-01,Greater Jakarta,USR-009
+ACC-0002,Sagara Hotels Indonesia,Restaurant Groups,STRATEGIC,ACTIVE,2021-02-02,West Java,USR-001
+ACC-0003,Rasa Prima Catering,Catering / Institutional Food Service,STRATEGIC,ACTIVE,2022-03-03,Central & East Java,USR-003
+ACC-0004,Kopi Pagi Bersama,Café & Bakery Chains,STRATEGIC,ACTIVE,2023-04-04,Bali & Nusa Tenggara,USR-004
+ACC-0005,Sentra Boga Institusi,Hotels & Resorts,STRATEGIC,ACTIVE,2024-05-05,Sumatra North,USR-005
+ACC-0006,Harborview Hospitality,Restaurant Groups,STRATEGIC,ACTIVE,2025-06-06,Sumatra South,USR-006
+ACC-0007,Teras Rasa Group,Catering / Institutional Food Service,PREFERRED,ACTIVE,2020-07-07,Kalimantan,USR-007
+ACC-0008,Bumi Bakery Network,Café & Bakery Chains,PREFERRED,ACTIVE,2021-08-08,Sulawesi,USR-008
+ACC-0009,Kopi Harian Nusantara,Café & Bakery Chains,STRATEGIC,ACTIVE,2021-06-10,West Java,USR-001
+ACC-0010,Mahakam Hotel Collection,Hotels & Resorts,PREFERRED,ACTIVE,2022-09-09,Greater Jakarta,USR-009
+ACC-0011,Citra Kuliner Nusantara,Restaurant Groups,PREFERRED,ACTIVE,2023-10-10,West Java,USR-001
+ACC-0012,Pangan Sejahtera Catering,Catering / Institutional Food Service,PREFERRED,ACTIVE,2024-11-11,Central & East Java,USR-003
+ACC-0013,Roast & Crumb Indonesia,Café & Bakery Chains,PREFERRED,ACTIVE,2025-12-12,Bali & Nusa Tenggara,USR-004
+ACC-0014,Seruni Resorts,Hotels & Resorts,PREFERRED,ACTIVE,2020-01-13,Sumatra North,USR-005
+ACC-0015,DineWorks Indonesia,Restaurant Groups,PREFERRED,ACTIVE,2021-02-14,Sumatra South,USR-006
+ACC-0016,Metro Institutional Catering,Catering / Institutional Food Service,PREFERRED,ACTIVE,2022-03-15,Kalimantan,USR-007
+ACC-0017,Meridian Hotels Group,Hotels & Resorts,STRATEGIC,ACTIVE,2022-03-14,West Java,USR-001
+ACC-0018,Kedai Kawan Coffee,Café & Bakery Chains,PREFERRED,ACTIVE,2023-04-16,Sulawesi,USR-008
+ACC-0019,Equator Hospitality,Hotels & Resorts,PREFERRED,ACTIVE,2024-05-17,Greater Jakarta,USR-009
+ACC-0020,Saji Utama Group,Restaurant Groups,PREFERRED,ACTIVE,2025-06-18,West Java,USR-001
+ACC-0021,Prima Hospitality Group,Hotels & Resorts,PREFERRED,ACTIVE,2020-09-15,Central & East Java,USR-003
+ACC-0022,Garuda Facility Catering,Catering / Institutional Food Service,STANDARD,ACTIVE,2020-07-19,Central & East Java,USR-003
+ACC-0023,Daily Grind Nusantara,Café & Bakery Chains,STANDARD,ACTIVE,2021-08-20,Bali & Nusa Tenggara,USR-004
+ACC-0024,Lotus Bay Hotels,Hotels & Resorts,STANDARD,ACTIVE,2022-09-21,Sumatra North,USR-005
+ACC-0025,TableNine Restaurant Group,Restaurant Groups,STANDARD,ACTIVE,2023-10-22,Sumatra South,USR-006
+ACC-0026,Prima Rasa Institutional,Catering / Institutional Food Service,STANDARD,ACTIVE,2024-11-23,Kalimantan,USR-007
+ACC-0027,Breadfolk Indonesia,Café & Bakery Chains,STANDARD,ACTIVE,2025-12-24,Sulawesi,USR-008
+ACC-0028,DapurKita Restaurant Group,Restaurant Groups,PREFERRED,ACTIVE,2022-11-03,Greater Jakarta,USR-001
+ACC-0029,Sumatra Stay Collection,Hotels & Resorts,STANDARD,ACTIVE,2020-01-25,Greater Jakarta,USR-009
+ACC-0030,Sambal & Co Group,Restaurant Groups,STANDARD,ACTIVE,2021-02-01,West Java,USR-001
+ACC-0031,Nusa Catering Network,Catering / Institutional Food Service,STANDARD,ACTIVE,2022-03-02,Central & East Java,USR-003
+ACC-0032,BeanStreet Indonesia,Café & Bakery Chains,STANDARD,ACTIVE,2023-04-03,Bali & Nusa Tenggara,USR-004
+ACC-0033,Borneo Hospitality Partners,Hotels & Resorts,STANDARD,ACTIVE,2024-05-04,Sumatra North,USR-005
+ACC-0034,UrbanFork Restaurant Group,Restaurant Groups,PREFERRED,ACTIVE,2023-08-21,Greater Jakarta,USR-002
+ACC-0035,KitchenWorks Group,Restaurant Groups,STANDARD,ACTIVE,2025-06-05,Sumatra South,USR-006
+ACC-0036,Cipta Boga Services,Catering / Institutional Food Service,STANDARD,ACTIVE,2020-07-06,Kalimantan,USR-007
+ACC-0037,Oven & Oak Indonesia,Café & Bakery Chains,STANDARD,ACTIVE,2021-08-07,Sulawesi,USR-008
+ACC-0038,Celebes Resort Network,Hotels & Resorts,STANDARD,ACTIVE,2022-09-08,Greater Jakarta,USR-009
+ACC-0039,UrbanPlate Indonesia,Restaurant Groups,STANDARD,ACTIVE,2023-10-09,West Java,USR-001
+ACC-0040,Mandiri Institutional Foods,Catering / Institutional Food Service,STANDARD,ACTIVE,2024-11-10,Central & East Java,USR-003
+ACC-0041,Kopi Tumbuh,Café & Bakery Chains,STANDARD,ACTIVE,2025-12-11,Bali & Nusa Tenggara,USR-004
+ACC-0042,Java Heritage Hotels,Hotels & Resorts,STANDARD,ACTIVE,2020-01-12,Sumatra North,USR-005
+ACC-0043,Ruang Makan Group,Restaurant Groups,STANDARD,ACTIVE,2021-02-13,Sumatra South,USR-006
+ACC-0044,Saji Sehat Catering,Catering / Institutional Food Service,STANDARD,ACTIVE,2022-03-14,Kalimantan,USR-007
+ACC-0045,Bakehouse Collective,Café & Bakery Chains,STANDARD,ACTIVE,2023-04-15,Sulawesi,USR-008
+ACC-0046,Nusantara Catering Services,Catering / Institutional Food Service,PREFERRED,ACTIVE,2023-02-06,Central & East Java,USR-003
+ACC-0047,IslandStay Resorts,Hotels & Resorts,STANDARD,ACTIVE,2024-05-16,Greater Jakarta,USR-009
+ACC-0048,Fork & Flame Indonesia,Restaurant Groups,STANDARD,ACTIVE,2025-06-17,West Java,USR-001
+ACC-0049,Dapur Institusi Nasional,Catering / Institutional Food Service,STANDARD,ACTIVE,2020-07-18,Central & East Java,USR-003
+ACC-0050,Morning Roast Group,Café & Bakery Chains,STANDARD,ACTIVE,2021-08-19,Bali & Nusa Tenggara,USR-004
+ACC-0051,Bayfront Resort Lombok,Hotels & Resorts,STANDARD,ACTIVE,2024-04-18,Bali & Nusa Tenggara,USR-002
+ACC-0052,Vista Nusantara Hotels,Hotels & Resorts,STANDARD,ACTIVE,2022-09-20,Sumatra North,USR-005
+ACC-0053,Rasa Kota Restaurants,Restaurant Groups,STANDARD,ACTIVE,2023-10-21,Sumatra South,USR-006
+ACC-0054,Nusantara Foodservice Partners,Catering / Institutional Food Service,STANDARD,ACTIVE,2024-11-22,Kalimantan,USR-007
+ACC-0055,Crumb & Coffee Co,Café & Bakery Chains,STANDARD,ACTIVE,2025-12-23,Sulawesi,USR-008
+ACC-0056,Pelangi Hospitality,Hotels & Resorts,STANDARD,ACTIVE,2020-01-24,Greater Jakarta,USR-009
+ACC-0057,Meja Bersama Group,Restaurant Groups,STANDARD,ACTIVE,2021-02-25,West Java,USR-001
+ACC-0058,Artisan Bakehouse Indonesia,Café & Bakery Chains,STANDARD,ACTIVE,2025-01-20,Greater Jakarta,USR-002
+ACC-0059,Sentra Catering Indonesia,Catering / Institutional Food Service,STANDARD,ACTIVE,2022-03-01,Central & East Java,USR-003
+ACC-0060,Brew & Bake Network,Café & Bakery Chains,STANDARD,ACTIVE,2023-04-02,Bali & Nusa Tenggara,USR-004
