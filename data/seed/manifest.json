@@ -1,5 +1,5 @@
 {
-  "dataset": "Northstar Commercial Solutions \u2014 Synthetic Data Foundation",
+  "dataset": "Northstar Commercial Solutions — Synthetic Data Foundation",
   "version": "1.0",
   "status": "FROZEN",
   "frozen_date": "2026-09-21",
@@ -18,11 +18,11 @@
     },
     "opportunities.csv": {
       "rows": 30,
-      "sha256": "54cd49e2ba1e3370316f2d0e639cdbbae7bbcbd801a94b13210b2dd2ced7bac7"
+      "sha256": "2739b7d0e5df2c691766add0ffc9e5bb461e9d32ecfec58d43d6360d11bdcab2"
     },
     "opportunity_solution_lines.csv": {
-      "rows": 55,
-      "sha256": "09ec1c0434ed78a3ac536e96d1a6a9197e03f87a5585df32943ed0b138b03b23"
+      "rows": 56,
+      "sha256": "39e9a3ab3d8cd5ebbbbd3f41a0bd547c53f5023517e2e7e5c29311a4041e48d8"
     },
     "orders.csv": {
       "rows": 74,
