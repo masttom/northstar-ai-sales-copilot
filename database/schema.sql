@@ -31,7 +31,7 @@ CREATE TABLE products (
     product_family VARCHAR(30) NOT NULL,
     product_role VARCHAR(30) NOT NULL CHECK (product_role IN ('ACCESSORY','CONSUMABLE','CORE_EQUIPMENT','SERVICE_PRODUCT','SUPPORTING_EQUIPMENT')),
     lifecycle_status VARCHAR(20) NOT NULL CHECK (lifecycle_status IN ('ACTIVE','PHASE_OUT','DISCONTINUED')),
-    commercial_status VARCHAR(20) NOT NULL CHECK (commercial_status IN ('NORMAL','PRICE_PROTECTED','CLEARANCE')),
+    commercial_status VARCHAR(20) NOT NULL CHECK (commercial_status IN ('NORMAL','PROMOTIONAL','PRICE_PROTECTED','CLEARANCE')),
     list_price_idr NUMERIC(15,2) NOT NULL CHECK (list_price_idr >= 0),
     launch_date DATE NOT NULL,
     discontinued_date DATE,
@@ -58,7 +58,9 @@ CREATE TABLE opportunity_solution_lines (
     solution_line_id VARCHAR(16) PRIMARY KEY,
     opportunity_id VARCHAR(24) NOT NULL REFERENCES opportunities(opportunity_id),
     product_id VARCHAR(16) NOT NULL REFERENCES products(product_id),
-    quantity INTEGER NOT NULL CHECK (quantity > 0)
+    quantity INTEGER NOT NULL CHECK (quantity > 0),
+    estimated_unit_price_idr NUMERIC(15,2),
+    CHECK (estimated_unit_price_idr IS NULL OR estimated_unit_price_idr >= 0)
 );
 
 CREATE TABLE orders (

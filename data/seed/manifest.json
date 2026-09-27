@@ -6,7 +6,7 @@
   "files": {
     "products.csv": {
       "rows": 80,
-      "sha256": "168cd05a55bd729fcb9a48829f8ddfb786568a0a37a78a82b425cdf8fe7e376b"
+      "sha256": "a6f04dc1aa6fd289844d6e3ee280ebd85509101c1a21bc6c7c0a2f78257641fc"
     },
     "sales_users.csv": {
       "rows": 12,
@@ -18,11 +18,11 @@
     },
     "opportunities.csv": {
       "rows": 30,
-      "sha256": "2739b7d0e5df2c691766add0ffc9e5bb461e9d32ecfec58d43d6360d11bdcab2"
+      "sha256": "13a97c7e4735d299c2bdda524c1550ff0170c6623c7f6dcfe40f79f11971c3a2"
     },
     "opportunity_solution_lines.csv": {
-      "rows": 56,
-      "sha256": "39e9a3ab3d8cd5ebbbbd3f41a0bd547c53f5023517e2e7e5c29311a4041e48d8"
+      "rows": 58,
+      "sha256": "707f3bc69884d3d99826b9fd23105cdfafa6ef0d1cb41d1aab0ad4884cabd805"
     },
     "orders.csv": {
       "rows": 74,
