@@ -1,0 +1,161 @@
+{
+  "name": "BT-05 | Get Product Details",
+  "nodes": [
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "fb471aad-9261-420c-a32a-021ea3b72cf3",
+              "leftValue": "={{ typeof $json.product_id === 'string' ? $json.product_id.trim() : '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        416,
+        0
+      ],
+      "id": "a6b84b4f-5ff8-4077-bf6f-fb20fa353c27",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "return {\n  json: {\n    error: {\n      code: \"INVALID_INPUT\",\n      message: \"product_id must be a non-empty string\"\n    }\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        96
+      ],
+      "id": "44fa589c-5853-4760-aeb2-2bd76c1398b7",
+      "name": "Invalid Input Response"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n    product_id,\n    sku,\n    product_name,\n    brand,\n    category,\n    product_family,\n    product_role,\n    lifecycle_status,\n    commercial_status,\n    list_price_idr,\n    launch_date,\n    discontinued_date\nFROM products\nWHERE product_id = $1;",
+        "options": {
+          "queryReplacement": "={{ $json.product_id.trim() }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        624,
+        -96
+      ],
+      "id": "ac7a50a0-aa62-413d-99b8-bef205fed3a9",
+      "name": "Get Product Details from PostgreSQL",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "name": "POSTGRES_CREDENTIAL_PLACEHOLDER"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst rows = $input.all().map(item => item.json);\n\nconst requestedId = $('When Executed by Another Workflow').first().json.product_id.trim();\n\nconst productRow = rows.find(row => row.product_id);\n\n// Product not found\nif (!productRow) {\n  return [{\n    json: {\n      product_id: requestedId,\n      found: false,\n      product: null\n    }\n  }];\n}\n\n// PostgreSQL DATE -> YYYY-MM-DD\nconst toDate = value =>\n  value == null ? null : String(value).slice(0, 10);\n\nreturn [{\n  json: {\n    product_id: requestedId,\n    found: true,\n    product: {\n      product_id: productRow.product_id,\n      sku: productRow.sku,\n      product_name: productRow.product_name,\n      brand: productRow.brand,\n      category: productRow.category,\n      product_family: productRow.product_family,\n      product_role: productRow.product_role,\n      lifecycle_status: productRow.lifecycle_status,\n      commercial_status: productRow.commercial_status,\n      list_price_idr: productRow.list_price_idr,\n      launch_date: toDate(productRow.launch_date),\n      discontinued_date: toDate(productRow.discontinued_date)\n    }\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        832,
+        -96
+      ],
+      "id": "d62ff9c9-090c-451c-aa2d-9ceadb6f0160",
+      "name": "Shape Product Details"
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "product_id"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        240,
+        0
+      ],
+      "id": "3c897e83-be8e-4821-8173-5f6d35336588",
+      "name": "When Executed by Another Workflow"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Get Product Details from PostgreSQL",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Invalid Input Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Product Details from PostgreSQL": {
+      "main": [
+        [
+          {
+            "node": "Shape Product Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "nodeGroups": [],
+  "tags": []
+}

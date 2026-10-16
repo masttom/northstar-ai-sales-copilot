@@ -1,0 +1,160 @@
+{
+  "name": "BT-04 | Get Opportunity",
+  "nodes": [
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "bc40a6ef-5362-47cd-a7c2-94b177f95858",
+              "leftValue": "={{ typeof $json.opportunity_id === 'string' ? $json.opportunity_id.trim() : '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        416,
+        0
+      ],
+      "id": "804adf21-edde-47c0-8709-94631701e181",
+      "name": "Validate Opportunity ID"
+    },
+    {
+      "parameters": {
+        "jsCode": "return {\n  json: {\n    error: {\n      code: \"INVALID_INPUT\",\n      message: \"opportunity_id must be a non-empty string\"\n    }\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        96
+      ],
+      "id": "bb425011-e5f5-4f6f-bd82-9cbf5ec6016f",
+      "name": "Invalid Input Response"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n    o.opportunity_id,\n    o.account_id,\n    o.owner_id,\n    o.opportunity_name,\n    o.stage,\n    o.estimated_value_idr,\n    o.expected_close_date,\n    o.target_deployment_date,\n    o.customer_requirements_json,\n    o.current_discount_pct,\n    o.requested_discount_pct,\n    o.outstanding_questions_json,\n\n    osl.solution_line_id,\n    osl.product_id,\n    p.sku,\n    p.product_name,\n    p.product_role,\n    p.commercial_status,\n    osl.quantity,\n    osl.estimated_unit_price_idr\n\nFROM opportunities o\n\nLEFT JOIN opportunity_solution_lines osl\n    ON osl.opportunity_id = o.opportunity_id\n\nLEFT JOIN products p\n    ON p.product_id = osl.product_id\n\nWHERE o.opportunity_id = $1\n\nORDER BY osl.solution_line_id ASC;",
+        "options": {
+          "queryReplacement": "={{ $json.opportunity_id.trim() }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        624,
+        -96
+      ],
+      "id": "a72a5150-0466-4428-8e84-f11ffe689d68",
+      "name": "Get Opportunity from PostgreSQL",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "name": "POSTGRES_CREDENTIAL_PLACEHOLDER"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst rows = $input.all()\n  .map(item => item.json);\n\nconst requestedId = $('When Executed by Another Workflow')\n  .first()\n  .json.opportunity_id.trim();\n\nconst opportunityRow = rows.find(\n  row => row.opportunity_id\n);\n\n// Opportunity not found\nif (!opportunityRow) {\n  return [{\n    json: {\n      opportunity_id: requestedId,\n      found: false,\n      opportunity: null\n    }\n  }];\n}\n\n// Preserve nullable values and decimal precision\nconst solutionLines = rows\n  .filter(row => row.solution_line_id)\n  .map(row => ({\n    solution_line_id: row.solution_line_id,\n    product_id: row.product_id,\n    sku: row.sku,\n    product_name: row.product_name,\n    product_role: row.product_role,\n    commercial_status: row.commercial_status,\n    quantity: row.quantity,\n    estimated_unit_price_idr: row.estimated_unit_price_idr\n  }));\n\n// Format PostgreSQL DATE values as YYYY-MM-DD\nconst toDate = value =>\n  value == null ? null : String(value).slice(0, 10);\n\nreturn [{\n  json: {\n    opportunity_id: requestedId,\n    found: true,\n    opportunity: {\n      opportunity_id: opportunityRow.opportunity_id,\n      account_id: opportunityRow.account_id,\n      owner_id: opportunityRow.owner_id,\n      opportunity_name: opportunityRow.opportunity_name,\n      stage: opportunityRow.stage,\n      estimated_value_idr: opportunityRow.estimated_value_idr,\n      expected_close_date: toDate(\n        opportunityRow.expected_close_date\n      ),\n      target_deployment_date: toDate(\n        opportunityRow.target_deployment_date\n      ),\n      customer_requirements:\n        opportunityRow.customer_requirements_json,\n      current_discount_pct:\n        opportunityRow.current_discount_pct,\n      requested_discount_pct:\n        opportunityRow.requested_discount_pct,\n      outstanding_questions:\n        opportunityRow.outstanding_questions_json,\n      solution_lines: solutionLines\n    }\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        832,
+        -96
+      ],
+      "id": "205b47f1-6a18-47a8-9604-113a6f54696e",
+      "name": "Shape Opportunity"
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "opportunity_id"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        240,
+        0
+      ],
+      "id": "31959111-d28a-483b-9076-eef087a593d2",
+      "name": "When Executed by Another Workflow"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Validate Opportunity ID": {
+      "main": [
+        [
+          {
+            "node": "Get Opportunity from PostgreSQL",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Invalid Input Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Opportunity from PostgreSQL": {
+      "main": [
+        [
+          {
+            "node": "Shape Opportunity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Validate Opportunity ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "nodeGroups": [],
+  "tags": []
+}

@@ -1,0 +1,161 @@
+{
+  "name": "BT-08 | Get Commercial Context",
+  "nodes": [
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "b0247ef8-e8c9-4d14-bdcd-b18a8ee1523e",
+              "leftValue": "={{ typeof $json.account_id === 'string' ? $json.account_id.trim() : '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        416,
+        0
+      ],
+      "id": "bec6c67a-9b43-4bdb-b453-3771524f7162",
+      "name": "Validate Account ID"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "return {\n  json: {\n    error: {\n      code: \"INVALID_INPUT\",\n      message: \"account_id must be a non-empty string\"\n    }\n  }\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        96
+      ],
+      "id": "bf90d132-383d-433e-83be-925082588d36",
+      "name": "Invalid Input Response"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "\nSELECT\n    a.account_id,\n\n    ag.agreement_id,\n    ag.agreement_name,\n    ag.agreement_type,\n    ag.effective_from AS agreement_effective_from,\n    ag.effective_to AS agreement_effective_to,\n    ag.status AS agreement_status,\n\n    ce.entitlement_id,\n    ce.entitlement_type,\n    ce.effective_from AS entitlement_effective_from,\n    ce.effective_to AS entitlement_effective_to,\n    ce.status AS entitlement_status\n\nFROM accounts a\n\nLEFT JOIN agreements ag\n    ON ag.account_id = a.account_id\n\nLEFT JOIN commercial_entitlements ce\n    ON ce.agreement_id = ag.agreement_id\n    AND ce.account_id = a.account_id\n\nWHERE a.account_id = $1\n\nORDER BY\n    ag.effective_from DESC NULLS LAST,\n    ag.agreement_id ASC,\n    ce.entitlement_id ASC;\n",
+        "options": {
+          "queryReplacement": "={{ $json.account_id.trim() }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        624,
+        -96
+      ],
+      "id": "9df00671-637d-422b-ac2a-ae88eb690d37",
+      "name": "Get Commercial Context from PostgreSQL",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "name": "POSTGRES_CREDENTIAL_PLACEHOLDER"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst rows = $input.all().map(item => item.json);\n\nconst accountId = $('When Executed by Another Workflow').first().json.account_id.trim();\n\n// Check whether the account exists\nconst accountFound = rows.some(\n  row => row.account_id === accountId\n);\n\nif (!accountFound) {\n  return [{\n    json: {\n      account_id: accountId,\n      found: false,\n      agreements: []\n    }\n  }];\n}\n\n// PostgreSQL DATE -> YYYY-MM-DD\nconst toDate = value =>\n  value == null ? null : String(value).slice(0, 10);\n\n// Group agreements by agreement_id\nconst agreementMap = new Map();\n\nfor (const row of rows) {\n\n  // Account exists but has no agreements\n  if (!row.agreement_id) continue;\n\n  if (!agreementMap.has(row.agreement_id)) {\n    agreementMap.set(row.agreement_id, {\n      agreement_id: row.agreement_id,\n      agreement_name: row.agreement_name,\n      agreement_type: row.agreement_type,\n      effective_from: toDate(row.agreement_effective_from),\n      effective_to: toDate(row.agreement_effective_to),\n      status: row.agreement_status,\n      entitlements: []\n    });\n  }\n\n  // Add entitlement if present\n  if (row.entitlement_id) {\n    agreementMap.get(row.agreement_id).entitlements.push({\n      entitlement_id: row.entitlement_id,\n      entitlement_type: row.entitlement_type,\n      effective_from: toDate(row.entitlement_effective_from),\n      effective_to: toDate(row.entitlement_effective_to),\n      status: row.entitlement_status\n    });\n  }\n}\n\nreturn [{\n  json: {\n    account_id: accountId,\n    found: true,\n    agreements: Array.from(agreementMap.values())\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        832,
+        -96
+      ],
+      "id": "e0a5f8f0-21c2-4a41-8f6e-a71924b3181b",
+      "name": "Shape Commercial Context"
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "account_id"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        240,
+        0
+      ],
+      "id": "47e8ac16-6f28-4658-ba72-366ff20b9d41",
+      "name": "When Executed by Another Workflow"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Validate Account ID": {
+      "main": [
+        [
+          {
+            "node": "Get Commercial Context from PostgreSQL",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Invalid Input Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Commercial Context from PostgreSQL": {
+      "main": [
+        [
+          {
+            "node": "Shape Commercial Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Validate Account ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "nodeGroups": [],
+  "tags": []
+}

@@ -1,0 +1,161 @@
+{
+  "name": "BT-03 | Get Account Context",
+  "nodes": [
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "76c90138-e144-4e4e-9d55-cb78b4e7a224",
+              "leftValue": "={{ typeof $json.account_id === 'string' ? $json.account_id.trim() : '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        416,
+        0
+      ],
+      "id": "046631cb-9f26-4fd2-b213-14a010d33ca7",
+      "name": "Validate Accouunt ID"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n    a.account_id,\n    a.account_name,\n    a.segment,\n    a.account_tier,\n    a.account_status,\n    a.customer_since,\n    a.sales_territory,\n\n    s.sales_user_id AS owner_sales_user_id,\n    s.name AS owner_name,\n    s.role AS owner_role,\n    s.territory AS owner_territory,\n    s.status AS owner_status\n\nFROM accounts a\n\nLEFT JOIN sales_users s\n    ON s.sales_user_id = a.account_owner_id\n\nWHERE a.account_id = $1;",
+        "options": {
+          "queryReplacement": "={{ $json.account_id.trim() }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        624,
+        -96
+      ],
+      "id": "6e6a9ac3-e818-4825-a354-a8eb4a6811e3",
+      "name": "Get Account Context from PostgreSQL",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "name": "POSTGRES_CREDENTIAL_PLACEHOLDER"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nconst row = items\n  .map(item => item.json)\n  .find(row => row.account_id);\n\nconst requestedAccountId = $('When Executed by Another Workflow')\n  .first()\n  .json.account_id.trim();\n\nif (!row) {\n  return [\n    {\n      json: {\n        account_id: requestedAccountId,\n        found: false,\n        account: null,\n      },\n    },\n  ];\n}\n\nconst owner = row.owner_sales_user_id\n  ? {\n      sales_user_id: row.owner_sales_user_id,\n      name: row.owner_name,\n      role: row.owner_role,\n      territory: row.owner_territory,\n      status: row.owner_status,\n    }\n  : null;\n\nreturn [\n  {\n    json: {\n      account_id: requestedAccountId,\n      found: true,\n      account: {\n        account_id: row.account_id,\n        account_name: row.account_name,\n        segment: row.segment,\n        account_tier: row.account_tier,\n        account_status: row.account_status,\n        customer_since: row.customer_since,\n        sales_territory: row.sales_territory,\n        owner,\n      },\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        832,
+        -96
+      ],
+      "id": "e29367b6-6ad2-47a2-afcb-0db344da9918",
+      "name": "Shape Account Context"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "return {\n  json: {\n    error: {\n      code: \"INVALID_INPUT\",\n      message: \"account_id must be a non-empty string\"\n    }\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        96
+      ],
+      "id": "24b5e97e-69f7-4424-896f-7862b651d8ea",
+      "name": "Invalid Input Response"
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "account_id"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        224,
+        0
+      ],
+      "id": "a8a93d48-be0d-466d-88aa-b771011e2945",
+      "name": "When Executed by Another Workflow"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Validate Accouunt ID": {
+      "main": [
+        [
+          {
+            "node": "Get Account Context from PostgreSQL",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Invalid Input Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Account Context from PostgreSQL": {
+      "main": [
+        [
+          {
+            "node": "Shape Account Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Validate Accouunt ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "nodeGroups": [],
+  "tags": []
+}

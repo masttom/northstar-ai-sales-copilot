@@ -1,0 +1,161 @@
+{
+  "name": "BT-01 | Resolve Account",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nconst candidates = items\n  .map(item => item.json)\n  .filter(row => row.account_id)\n  .map(row => ({\n    account_id: row.account_id,\n    account_name: row.account_name,\n    segment: row.segment,\n    account_tier: row.account_tier,\n    sales_territory: row.sales_territory,\n  }));\n\nreturn [\n  {\n    json: {\n      candidates,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        832,
+        -80
+      ],
+      "id": "e4a983a8-a3fe-4287-869c-00153c3c4457",
+      "name": "Shape Resolver Output"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "return {\n  json: {\n    error: {\n      code: \"INVALID_INPUT\",\n      message: \"query must be a non-empty string\"\n    }\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        544,
+        96
+      ],
+      "id": "c5c5b673-3686-4055-b117-0ec68cb61f29",
+      "name": "Invalid Input Response"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "f0e48923-301f-40d3-8fab-4d35f198661d",
+              "leftValue": "={{ typeof $json.query === 'string' ? $json.query.trim() : '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        336,
+        0
+      ],
+      "id": "ddebab31-c9a8-4ae8-b6e4-30e3ee0572fe",
+      "name": "Validate Query"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n    account_id,\n    account_name,\n    segment,\n    account_tier,\n    sales_territory\nFROM accounts\nWHERE\n    account_id ILIKE $1\n    OR account_name ILIKE '%' || $1 || '%'\nORDER BY\n    CASE\n        WHEN LOWER(account_id) = LOWER($1) THEN 0\n        WHEN LOWER(account_name) = LOWER($1) THEN 1\n        ELSE 2\n    END,\n    account_name ASC;",
+        "options": {
+          "queryReplacement": "={{ $json.query.trim() }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        624,
+        -80
+      ],
+      "id": "e6039ebf-2f10-40ac-9b15-d9d07b51a264",
+      "name": "Resolve Account in PostgreSQL",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "name": "POSTGRES_CREDENTIAL_PLACEHOLDER"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "query"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        144,
+        0
+      ],
+      "id": "934d08c9-fb40-4a00-9610-0e54aeb25841",
+      "name": "When Executed by Another Workflow"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Validate Query": {
+      "main": [
+        [
+          {
+            "node": "Resolve Account in PostgreSQL",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Invalid Input Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Account in PostgreSQL": {
+      "main": [
+        [
+          {
+            "node": "Shape Resolver Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Validate Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "nodeGroups": [],
+  "tags": []
+}

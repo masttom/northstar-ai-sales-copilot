@@ -1,0 +1,161 @@
+{
+  "name": "BT-02 | Resolve Product",
+  "nodes": [
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "b90ca050-d4bb-43bf-8f5d-ba859615e9d8",
+              "leftValue": "={{ typeof $json.query === 'string' ? $json.query.trim() : '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        416,
+        0
+      ],
+      "id": "84d6d44e-141f-4e82-98e4-9ea09df368be",
+      "name": "Validate Query"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "return {\n  json: {\n    error: {\n      code: \"INVALID_INPUT\",\n      message: \"query must be a non-empty string\"\n    }\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        96
+      ],
+      "id": "b9647a84-34b1-4677-ad0d-b5ccfefef379",
+      "name": "Invalid Input Response"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH input AS (\n    SELECT\n        $1::text AS raw_query,\n        LOWER($1::text) AS lower_query,\n        REGEXP_REPLACE(LOWER($1::text), '[-\\s]', '', 'g') AS normalized_query\n),\nmatched AS (\n    SELECT\n        p.product_id,\n        p.sku,\n        p.product_name,\n        p.brand,\n        p.category,\n        p.product_family,\n        p.lifecycle_status,\n        p.commercial_status,\n\n        CASE\n            WHEN LOWER(p.product_id) = i.lower_query\n                THEN 'EXACT_PRODUCT_ID'\n\n            WHEN LOWER(p.sku) = i.lower_query\n                THEN 'EXACT_SKU'\n\n            WHEN LOWER(p.product_name) = i.lower_query\n                THEN 'EXACT_PRODUCT_NAME'\n\n            WHEN REGEXP_REPLACE(LOWER(p.sku), '[-\\s]', '', 'g') = i.normalized_query\n                THEN 'NORMALIZED_EXACT_SKU'\n\n            WHEN REGEXP_REPLACE(LOWER(p.product_name), '[-\\s]', '', 'g') = i.normalized_query\n                THEN 'NORMALIZED_EXACT_NAME'\n\n            WHEN REGEXP_REPLACE(LOWER(p.sku), '[-\\s]', '', 'g')\n                 LIKE '%' || i.normalized_query || '%'\n                THEN 'NORMALIZED_PARTIAL_SKU'\n\n            WHEN REGEXP_REPLACE(LOWER(p.product_name), '[-\\s]', '', 'g')\n                 LIKE '%' || i.normalized_query || '%'\n                THEN 'NORMALIZED_PARTIAL_NAME'\n\n            WHEN LOWER(p.sku) LIKE '%' || i.lower_query || '%'\n              OR LOWER(p.product_name) LIKE '%' || i.lower_query || '%'\n                THEN 'PARTIAL'\n        END AS match_type,\n\n        CASE\n            WHEN LOWER(p.product_id) = i.lower_query THEN 0\n            WHEN LOWER(p.sku) = i.lower_query THEN 1\n            WHEN LOWER(p.product_name) = i.lower_query THEN 2\n            WHEN REGEXP_REPLACE(LOWER(p.sku), '[-\\s]', '', 'g') = i.normalized_query THEN 3\n            WHEN REGEXP_REPLACE(LOWER(p.product_name), '[-\\s]', '', 'g') = i.normalized_query THEN 4\n            WHEN REGEXP_REPLACE(LOWER(p.sku), '[-\\s]', '', 'g')\n                 LIKE '%' || i.normalized_query || '%' THEN 5\n            WHEN REGEXP_REPLACE(LOWER(p.product_name), '[-\\s]', '', 'g')\n                 LIKE '%' || i.normalized_query || '%' THEN 6\n            WHEN LOWER(p.sku) LIKE '%' || i.lower_query || '%'\n              OR LOWER(p.product_name) LIKE '%' || i.lower_query || '%' THEN 7\n        END AS match_rank\n\n    FROM products p\n    CROSS JOIN input i\n)\nSELECT *\nFROM matched\nWHERE match_rank IS NOT NULL\nORDER BY match_rank ASC, product_name ASC;",
+        "options": {
+          "queryReplacement": "={{ $json.query.trim() }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        624,
+        -96
+      ],
+      "id": "513363dd-70f7-4377-a417-ed4a104437c5",
+      "name": "Resolve Product in PostgreSQL",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "name": "POSTGRES_CREDENTIAL_PLACEHOLDER"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nconst candidates = items\n  .map(item => item.json)\n  .filter(row => row.product_id)\n  .map(row => ({\n    product_id: row.product_id,\n    sku: row.sku,\n    product_name: row.product_name,\n    brand: row.brand,\n    category: row.category,\n    product_family: row.product_family,\n    lifecycle_status: row.lifecycle_status,\n    commercial_status: row.commercial_status,\n    match_type: row.match_type,\n    match_rank: row.match_rank,\n  }));\n\nreturn [\n  {\n    json: {\n      candidates,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        816,
+        -96
+      ],
+      "id": "a8fb88b3-850c-4f07-b358-b43bbecde2df",
+      "name": "Shape Resolver Output"
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "query"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        224,
+        0
+      ],
+      "id": "f48b993f-6c6c-4479-ac25-ccaef0bc316f",
+      "name": "When Executed by Another Workflow"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Validate Query": {
+      "main": [
+        [
+          {
+            "node": "Resolve Product in PostgreSQL",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Invalid Input Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Product in PostgreSQL": {
+      "main": [
+        [
+          {
+            "node": "Shape Resolver Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Validate Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "nodeGroups": [],
+  "tags": []
+}

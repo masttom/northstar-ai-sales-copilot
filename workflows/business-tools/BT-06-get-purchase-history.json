@@ -1,0 +1,174 @@
+{
+  "name": "BT-06 | Get Purchase History",
+  "nodes": [
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "75ac9378-7ae3-46b2-bc5b-a60f87ad562e",
+              "leftValue": "={{ typeof $json.account_id === 'string' ? $json.account_id.trim() : '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "7f0fe4de-f6ea-4ae1-ba20-a757ff7edb2b",
+              "leftValue": "={{\n  $json.product_id == null ||\n  (\n    typeof $json.product_id === 'string' &&\n    $json.product_id.trim().length > 0 &&\n    $json.product_id.trim().toLowerCase() !== 'null' &&\n    $json.product_id.trim() !== '__ALL_PRODUCTS__'\n  )\n}}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        416,
+        0
+      ],
+      "id": "a50357c3-5328-4713-b011-b6470965cb64",
+      "name": "Validate Account ID"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "return {\n  json: {\n    error: {\n      code: \"INVALID_INPUT\",\n      message: \"account_id must be a non-empty string; product_id must be null or a non-empty string\"\n    }\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        96
+      ],
+      "id": "edb4d725-b491-45c7-b87f-648caf2d1ff9",
+      "name": "Invalid Input Response"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "\nWITH input AS (\n    SELECT\n        $1::text AS account_id,\n        NULLIF($2::text, '__ALL_PRODUCTS__') AS product_id\n)\n\nSELECT\n    a.account_id,\n    o.order_id,\n    o.order_date,\n    o.order_status,\n    ol.order_line_id,\n    ol.product_id,\n    p.sku,\n    p.product_name,\n    ol.quantity,\n    ol.unit_price_idr,\n    ol.installation_location\n\nFROM accounts a\nCROSS JOIN input i\n\nLEFT JOIN orders o\n    ON o.account_id = a.account_id\n    AND o.order_status = 'COMPLETED'\n    AND (\n        i.product_id IS NULL\n        OR EXISTS (\n            SELECT 1\n            FROM order_lines filtered\n            WHERE filtered.order_id = o.order_id\n              AND filtered.product_id = i.product_id\n        )\n    )\n\nLEFT JOIN order_lines ol\n    ON ol.order_id = o.order_id\n    AND (\n        i.product_id IS NULL\n        OR ol.product_id = i.product_id\n    )\n\nLEFT JOIN products p\n    ON p.product_id = ol.product_id\n\nWHERE a.account_id = i.account_id\n\nORDER BY\n    o.order_date DESC NULLS LAST,\n    o.order_id ASC,\n    ol.order_line_id ASC;\n",
+        "options": {
+          "queryReplacement": "={{ [$json.account_id.trim(), $json.product_id == null ? '__ALL_PRODUCTS__' : $json.product_id.trim()].join(',') }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        624,
+        -64
+      ],
+      "id": "27d951a6-f9eb-4ac3-bd9b-625fb1067eb7",
+      "name": "Get Purchase History from PostgreSQL1",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "name": "POSTGRES_CREDENTIAL_PLACEHOLDER"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst rows = $input.all().map(item => item.json);\n\nconst input = $('When Executed by Another Workflow').first().json;\n\nconst accountId = input.account_id.trim();\nconst productId = input.product_id == null\n  ? null\n  : input.product_id.trim();\n\nconst accountFound = rows.some(\n  row => row.account_id === accountId\n);\n\n// Account does not exist\nif (!accountFound) {\n  return [{\n    json: {\n      account_id: accountId,\n      product_id: productId,\n      found: false,\n      orders: []\n    }\n  }];\n}\n\n// PostgreSQL DATE -> YYYY-MM-DD\nconst toDate = value =>\n  value == null ? null : String(value).slice(0, 10);\n\n// Group order lines by order_id\nconst orderMap = new Map();\n\nfor (const row of rows) {\n  // Existing account with no matching purchase\n  if (!row.order_id) continue;\n\n  if (!orderMap.has(row.order_id)) {\n    orderMap.set(row.order_id, {\n      order_id: row.order_id,\n      order_date: toDate(row.order_date),\n      order_status: row.order_status,\n      lines: []\n    });\n  }\n\n  // Preserve individual transaction line identity\n  if (row.order_line_id) {\n    orderMap.get(row.order_id).lines.push({\n      order_line_id: row.order_line_id,\n      product_id: row.product_id,\n      sku: row.sku,\n      product_name: row.product_name,\n      quantity: row.quantity,\n      unit_price_idr: row.unit_price_idr,\n      installation_location: row.installation_location\n    });\n  }\n}\n\nreturn [{\n  json: {\n    account_id: accountId,\n    product_id: productId,\n    found: true,\n    orders: Array.from(orderMap.values())\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        816,
+        -64
+      ],
+      "id": "3c583a47-823c-4198-9828-3cc02baa4c7c",
+      "name": "Shape Purchase History"
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "account_id"
+            },
+            {
+              "name": "product_id"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        240,
+        0
+      ],
+      "id": "7f215b0c-fb80-4d60-9686-9aac152dbd6e",
+      "name": "When Executed by Another Workflow"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Validate Account ID": {
+      "main": [
+        [
+          {
+            "node": "Get Purchase History from PostgreSQL1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Invalid Input Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Purchase History from PostgreSQL1": {
+      "main": [
+        [
+          {
+            "node": "Shape Purchase History",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Validate Account ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "nodeGroups": [],
+  "tags": []
+}

@@ -1,0 +1,161 @@
+{
+  "name": "BT-07 | Get Inventory",
+  "nodes": [
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "c4cd1a5c-0853-4dd8-82f9-70e4318cfe5a",
+              "leftValue": "={{ typeof $json.product_id === 'string' ? $json.product_id.trim() : '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        416,
+        0
+      ],
+      "id": "182963a5-a0e2-453d-9bba-a04ad42a66f6",
+      "name": "Validate Product ID"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "return {\n  json: {\n    error: {\n      code: \"INVALID_INPUT\",\n      message: \"product_id must be a non-empty string\"\n    }\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        96
+      ],
+      "id": "e638a73c-569e-4382-99a9-70f162add22c",
+      "name": "Invalid Input Response"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "\nSELECT\n    p.product_id,\n    'POSITION' AS record_type,\n\n    ip.warehouse_id,\n    ip.on_hand,\n    ip.reserved,\n    ip.available,\n    ip.last_updated,\n\n    NULL::varchar AS incoming_id,\n    NULL::integer AS incoming_quantity,\n    NULL::date AS expected_arrival,\n    NULL::varchar AS incoming_status\n\nFROM products p\nJOIN inventory_positions ip\n    ON ip.product_id = p.product_id\nWHERE p.product_id = $1\n\nUNION ALL\n\nSELECT\n    p.product_id,\n    'INCOMING' AS record_type,\n\n    ii.warehouse_id,\n    NULL::integer AS on_hand,\n    NULL::integer AS reserved,\n    NULL::integer AS available,\n    NULL::timestamptz AS last_updated,\n\n    ii.incoming_id,\n    ii.quantity AS incoming_quantity,\n    ii.expected_arrival,\n    ii.status AS incoming_status\n\nFROM products p\nJOIN incoming_inventory ii\n    ON ii.product_id = p.product_id\nWHERE p.product_id = $1\n\nUNION ALL\n\nSELECT\n    p.product_id,\n    'PRODUCT_ONLY' AS record_type,\n\n    NULL::varchar AS warehouse_id,\n    NULL::integer AS on_hand,\n    NULL::integer AS reserved,\n    NULL::integer AS available,\n    NULL::timestamptz AS last_updated,\n\n    NULL::varchar AS incoming_id,\n    NULL::integer AS incoming_quantity,\n    NULL::date AS expected_arrival,\n    NULL::varchar AS incoming_status\n\nFROM products p\nWHERE p.product_id = $1\n  AND NOT EXISTS (\n      SELECT 1\n      FROM inventory_positions ip\n      WHERE ip.product_id = p.product_id\n  )\n  AND NOT EXISTS (\n      SELECT 1\n      FROM incoming_inventory ii\n      WHERE ii.product_id = p.product_id\n  )\n\nORDER BY record_type, warehouse_id, incoming_id;\n",
+        "options": {
+          "queryReplacement": "={{ $json.product_id.trim() }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        624,
+        -96
+      ],
+      "id": "06ff29c9-e03a-488e-9f76-5614c5e75e8b",
+      "name": "Get Inventory from PostgreSQL",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "name": "POSTGRES_CREDENTIAL_PLACEHOLDER"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst rows = $input.all().map(item => item.json);\n\nconst productId = $('When Executed by Another Workflow')\n  .first()\n  .json.product_id.trim();\n\n// Check whether the product exists\nconst productFound = rows.some(\n  row => row.product_id === productId\n);\n\nif (!productFound) {\n  return [{\n    json: {\n      product_id: productId,\n      found: false,\n      inventory_positions: [],\n      incoming_inventory: []\n    }\n  }];\n}\n\nconst inventoryPositions = [];\nconst incomingInventory = [];\n\nconst toDate = value =>\n  value == null ? null : String(value).slice(0, 10);\n\nconst toTimestamp = value =>\n  value == null ? null : new Date(value).toISOString();\n\nfor (const row of rows) {\n\n  if (row.record_type === 'POSITION') {\n    inventoryPositions.push({\n      warehouse_id: row.warehouse_id,\n      on_hand: row.on_hand,\n      reserved: row.reserved,\n      available: row.available,\n      last_updated: toTimestamp(row.last_updated)\n    });\n  }\n\n  if (row.record_type === 'INCOMING') {\n    incomingInventory.push({\n      incoming_id: row.incoming_id,\n      warehouse_id: row.warehouse_id,\n      quantity: row.incoming_quantity,\n      expected_arrival: toDate(row.expected_arrival),\n      status: row.incoming_status\n    });\n  }\n}\n\nreturn [{\n  json: {\n    product_id: productId,\n    found: true,\n    inventory_positions: inventoryPositions,\n    incoming_inventory: incomingInventory\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        832,
+        -96
+      ],
+      "id": "6cf50aff-17eb-4c1b-be2a-a78489aadce4",
+      "name": "Shape Inventory"
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "product_id"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        240,
+        0
+      ],
+      "id": "614837ff-dd18-4017-8e9b-a9443fd29cf5",
+      "name": "When Executed by Another Workflow"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Validate Product ID": {
+      "main": [
+        [
+          {
+            "node": "Get Inventory from PostgreSQL",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Invalid Input Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Inventory from PostgreSQL": {
+      "main": [
+        [
+          {
+            "node": "Shape Inventory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Validate Product ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "nodeGroups": [],
+  "tags": []
+}
