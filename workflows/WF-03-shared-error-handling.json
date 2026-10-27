@@ -1,0 +1,127 @@
+{
+  "name": "SalesCopilot | WF-03 - Shared Error Handling",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "a9637592-1990-40a4-b6de-5c5d9c782fc7",
+      "name": "Error Trigger"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d1e62db0-2bf8-4c39-9084-acefd710621e",
+              "name": "workflow_name",
+              "value": "={{ $json.workflow?.name ?? 'Unknown workflow' }}",
+              "type": "string"
+            },
+            {
+              "id": "63c1f134-9e43-4d07-a0eb-c4aeb6f29339",
+              "name": "workflow_id",
+              "value": "={{ $json.workflow?.id ?? 'N/A' }}",
+              "type": "string"
+            },
+            {
+              "id": "acea4ff6-0d7e-4f95-bb2e-ae62f06e2828",
+              "name": "failed_node",
+              "value": "={{ $json.execution?.lastNodeExecuted ?? $json.trigger?.error?.node?.name ?? 'Unknown node' }}",
+              "type": "string"
+            },
+            {
+              "id": "e08c39ea-a9d7-4ec8-9696-ecd0f9e66fc2",
+              "name": "error_message",
+              "value": "=\t{{ $json.execution?.error?.message ?? $json.trigger?.error?.message ?? 'No error message available' }}",
+              "type": "string"
+            },
+            {
+              "id": "f210b6a1-ef7b-495b-9bb9-cb5c13412c87",
+              "name": "execution_url",
+              "value": "=\t{{ $json.execution?.url ?? 'Not available' }}",
+              "type": "string"
+            },
+            {
+              "id": "c34724ed-1dc6-4bc3-b505-458b7ad3d0b9",
+              "name": "error_time",
+              "value": "={{ $now.setZone('Asia/Jakarta').toFormat('yyyy-MM-dd HH:mm:ss') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "b1e195ef-71f9-44e4-9501-fee87cc72c6b",
+      "name": "Format Error Report"
+    },
+    {
+      "parameters": {
+        "sendTo": "MONITORING_EMAIL_PLACEHOLDER",
+        "subject": "={{ '[Northstar Alert] ' + $json.workflow_name + ' — Execution Failed' }}",
+        "emailType": "text",
+        "message": "={{ `NORTHSTAR AI SALES COPILOT\nWORKFLOW ERROR REPORT\n\nWorkflow: ${$json.workflow_name}\nWorkflow ID: ${$json.workflow_id}\nFailed Node: ${$json.failed_node}\nError: ${$json.error_message}\n\nTime (WIB): ${$json.error_time}\nExecution URL: ${$json.execution_url}\n\n---\nAutomated notification from WF-03 Shared Error Handling.` }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "0738b4f5-8696-496b-9dda-47923c2b0169",
+      "name": "Send a message",
+      "credentials": {
+        "gmailOAuth2": {
+          "name": "GMAILOAUTH2_CREDENTIAL_PLACEHOLDER"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Format Error Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Error Report": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "timezone": "Asia/Jakarta",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "nodeGroups": [],
+  "tags": []
+}
