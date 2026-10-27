@@ -1,0 +1,75 @@
+{
+  "name": "BT-09 | Calculate Opportunity Financials",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "opportunity_id"
+            },
+            {
+              "name": "discount_pct",
+              "type": "number"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "cadbcfd0-0f66-4502-b795-8ef80cea8342",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "\nWITH line_calculations AS (\n    SELECT\n        osl.quantity::numeric *\n            osl.estimated_unit_price_idr::numeric AS line_total_idr,\n        p.product_role,\n        p.commercial_status\n    FROM opportunity_solution_lines osl\n    JOIN products p\n        ON p.product_id = osl.product_id\n    WHERE osl.opportunity_id = $1\n),\ntotals AS (\n    SELECT\n        COUNT(*) AS line_count,\n\n        COALESCE(\n            SUM(line_total_idr), 0\n        ) AS total_lines_idr,\n\n        COALESCE(\n            SUM(line_total_idr) FILTER (\n                WHERE product_role = 'CORE_EQUIPMENT'\n                AND commercial_status = 'NORMAL'\n            ), 0\n        ) AS normal_core_equipment_idr,\n\n        COALESCE(\n            SUM(line_total_idr) FILTER (\n                WHERE product_role = 'SUPPORTING_EQUIPMENT'\n                AND commercial_status = 'NORMAL'\n            ), 0\n        ) AS normal_supporting_equipment_idr,\n\n        COALESCE(\n            SUM(line_total_idr) FILTER (\n                WHERE commercial_status <> 'NORMAL'\n            ), 0\n        ) AS non_normal_subtotal_idr\n\n    FROM line_calculations\n),\nfinancial_calculations AS (\n    SELECT\n        line_count,\n        total_lines_idr,\n        normal_core_equipment_idr,\n        normal_supporting_equipment_idr,\n        non_normal_subtotal_idr,\n\n        ROUND(\n            normal_core_equipment_idr *\n            $2::numeric / 100,\n            2\n        ) AS core_equipment_discount_idr\n\n    FROM totals\n)\nSELECT\n    $1::text AS opportunity_id,\n\n    EXISTS (\n        SELECT 1\n        FROM opportunities\n        WHERE opportunity_id = $1\n    ) AS found,\n\n    $2::numeric AS discount_pct,\n\n    line_count,\n    total_lines_idr,\n    normal_core_equipment_idr,\n    normal_supporting_equipment_idr,\n    non_normal_subtotal_idr,\n\n    core_equipment_discount_idr,\n\n    (\n        normal_core_equipment_idr -\n        core_equipment_discount_idr\n    ) AS core_equipment_after_discount_idr,\n\n    (\n        total_lines_idr -\n        core_equipment_discount_idr\n    ) AS opportunity_after_discount_idr\n\nFROM financial_calculations;\n",
+        "options": {
+          "queryReplacement": "={{ [$json.opportunity_id, $json.discount_pct] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        208,
+        0
+      ],
+      "id": "c5c08522-05a3-4aae-adad-fb07a0b24213",
+      "name": "Execute a SQL query",
+      "credentials": {
+        "postgres": {
+          "name": "POSTGRES_CREDENTIAL_PLACEHOLDER"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Execute a SQL query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "timezone": "Asia/Jakarta",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "nodeGroups": [],
+  "tags": []
+}
